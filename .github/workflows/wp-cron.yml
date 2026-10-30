@@ -1,0 +1,38 @@
+# Goi wp-cron.php cua huudung.net moi 15 phut de bai hen gio len dung gio ca khi web vang.
+# Thay task "ANTIGRAVITY WP Cron" tren laptop (Dung khong bat laptop ban dem, 30/10/2026).
+# Khong mat khau, khong du lieu: chi goi mot duong link cong khai.
+name: wp-cron huudung.net
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Goi wp-cron.php
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "https://huudung.net/wp-cron.php?doing_wp_cron=$(date +%s)")
+          echo "HTTP $code"
+          [ "$code" -ge 200 ] && [ "$code" -lt 400 ]
+
+      # GitHub tu tat lich chay cua repo public sau 60 ngay khong co commit.
+      # Qua 30 ngay chua co commit thi ghi ngay vao nhip.txt de giu lich.
+      - uses: actions/checkout@v4
+      - name: Giu lich khong bi tat
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt 2592000 ]; then
+            date -u +%F > nhip.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add nhip.txt
+            git commit -m "nhip: giu lich chay"
+            git push
+          fi
